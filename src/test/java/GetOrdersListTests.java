@@ -1,4 +1,3 @@
-import common.EndPoints;
 import helpers.CourierHelper;
 import helpers.OrderHelper;
 import io.qameta.allure.Description;
@@ -25,35 +24,31 @@ public class GetOrdersListTests {
     private OrderHelper orderHelper;
     private int courierId;
     private int orderId;
-    private int orderTrackId;
-    String color = "BLACK";
+    private int orderTrack;
 
     @Before
     @Step("setUp")
     public void setUp () {
-        RestAssured.baseURI = EndPoints.BASE_URI;
         courierHelper = new CourierHelper();
         orderHelper = new OrderHelper();
-        // Проброс запросов и ответов в консоль, аналог log().all()
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @Test
     @Description("Get orders list test")
     public void getOrdersList() {
-        Courier courier = Courier.getLoginPasswordAndFirstName();
+        Courier courier = Courier.getRandom();
         courierHelper.createCourier(courier);
         ValidatableResponse responseLoginCourier =
-                courierHelper.loginCourier(new CourierCredentials()
-                        .setCourierCredentials(courier.getLogin(), courier.getPassword()));
+                courierHelper.loginCourier(CourierCredentials.getCourierCredentials(courier));
         courierId = responseLoginCourier.extract().path("id");
 
-        Order order = Order.getOrder(color);
+        Order order = Order.getRandomOrder(List.of("BLACK"));
         ValidatableResponse responseCreateOrder = orderHelper.createOrder(order);
         responseCreateOrder.assertThat().statusCode(SC_CREATED);
-        orderTrackId = responseCreateOrder.extract().path("track");
+        orderTrack = responseCreateOrder.extract().path("track");
 
-        ValidatableResponse responseOrderByTrackId = orderHelper.getOrderByTrackId(orderTrackId);
+        ValidatableResponse responseOrderByTrackId = orderHelper.getOrderByTrackNumber(orderTrack);
         responseOrderByTrackId.assertThat().statusCode(SC_OK);
         orderId = responseOrderByTrackId.extract().body().path("order.id");
 
@@ -70,6 +65,6 @@ public class GetOrdersListTests {
     @Step("Teardown - delete courier")
     public void tearDown() {
         if (courierId != 0)
-            courierHelper.deleteCourierById(courierId);
+            courierHelper.deleteCourier(courierId);
     }
 }

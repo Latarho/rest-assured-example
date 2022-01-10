@@ -1,4 +1,3 @@
-import common.EndPoints;
 import helpers.CourierHelper;
 import io.qameta.allure.Description;
 import io.qameta.allure.Step;
@@ -24,7 +23,6 @@ public class LoginCourierTests {
     @Before
     @Step("setUp")
     public void setUp () {
-        RestAssured.baseURI = EndPoints.BASE_URI;
         courierHelper = new CourierHelper();
         // Проброс запросов и ответов в консоль, аналог log().all()
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
@@ -34,13 +32,12 @@ public class LoginCourierTests {
     @Description("Login courier with correct credentials")
     public void loginCourierCorrectCredentials() {
         // Get body for new courier
-        Courier courier = Courier.getLoginPasswordAndFirstName();
+        Courier courier = Courier.getRandom();
         // Create courier
         courierHelper.createCourier(courier);
         // Login courier
         ValidatableResponse responseLoginCourier =
-                courierHelper.loginCourier(new CourierCredentials()
-                        .setCourierCredentials(courier.getLogin(), courier.getPassword()));
+                courierHelper.loginCourier(CourierCredentials.getCourierCredentials(courier));
 
         courierId = responseLoginCourier.extract().path("id");
 
@@ -51,11 +48,10 @@ public class LoginCourierTests {
     @Test
     @Description("Login courier with only login")
     public void loginCourierOnlyLogin() {
-        Courier courier = Courier.getLoginPasswordAndFirstName();
+        Courier courier = Courier.getRandom();
         courierHelper.createCourier(courier);
         ValidatableResponse responseLoginCourier =
-                courierHelper.loginCourier(new CourierCredentials()
-                        .setCourierLoginCredential(courier.getLogin()));
+                courierHelper.loginCourier(new CourierCredentials(courier.login, ""));
 
         String actualErrorMessage = responseLoginCourier.extract().path("message");
         String expectedErrorMessage = "Недостаточно данных для входа";
@@ -65,19 +61,37 @@ public class LoginCourierTests {
                 actualErrorMessage);
 
         ValidatableResponse responseLoginCourierForID =
-                courierHelper.loginCourier(new CourierCredentials()
-                        .setCourierCredentials(courier.getLogin(), courier.getPassword()));
+                courierHelper.loginCourier(CourierCredentials.getCourierCredentials(courier));
+        courierId = responseLoginCourierForID.extract().path("id");
+    }
+
+    @Test
+    @Description("Login courier with null password")
+    public void loginCourierNullPassword() {
+        Courier courier = Courier.getRandom();
+        courierHelper.createCourier(courier);
+        ValidatableResponse responseLoginCourier =
+                courierHelper.loginCourier(new CourierCredentials(courier.login, null));
+
+        String actualErrorMessage = responseLoginCourier.extract().path("message");
+        String expectedErrorMessage = "Недостаточно данных для входа";
+
+        responseLoginCourier.assertThat().statusCode(SC_BAD_REQUEST);
+        assertEquals("Фактическое сообщение в ответе отличается от ожидаемого", expectedErrorMessage,
+                actualErrorMessage);
+
+        ValidatableResponse responseLoginCourierForID =
+                courierHelper.loginCourier(CourierCredentials.getCourierCredentials(courier));
         courierId = responseLoginCourierForID.extract().path("id");
     }
 
     @Test
     @Description("Login courier with only password")
     public void loginCourierOnlyPassword() {
-        Courier courier = Courier.getLoginPasswordAndFirstName();
+        Courier courier = Courier.getRandom();
         courierHelper.createCourier(courier);
         ValidatableResponse responseLoginCourier =
-                courierHelper.loginCourier(new CourierCredentials()
-                        .setCourierPasswordCredential(courier.getPassword()));
+                courierHelper.loginCourier(new CourierCredentials("", courier.password));
 
         String actualErrorMessage = responseLoginCourier.extract().path("message");
         String expectedErrorMessage = "Недостаточно данных для входа";
@@ -87,18 +101,16 @@ public class LoginCourierTests {
                 actualErrorMessage);
 
         ValidatableResponse responseLoginCourierForID =
-                courierHelper.loginCourier(new CourierCredentials()
-                        .setCourierCredentials(courier.getLogin(), courier.getPassword()));
+                courierHelper.loginCourier(CourierCredentials.getCourierCredentials(courier));
         courierId = responseLoginCourierForID.extract().path("id");
     }
 
     @Test
     @Description("Login courier with wrong login")
     public void loginCourierWrongLogin() {
-        Courier courier = Courier.getLoginPasswordAndFirstName();
+        Courier courier = Courier.getRandom();
         ValidatableResponse responseLoginCourier =
-                courierHelper.loginCourier(new CourierCredentials()
-                        .setCourierCredentials(courier.getLogin(), courier.getPassword()));
+                courierHelper.loginCourier(CourierCredentials.getCourierCredentials(courier));
 
         String actualErrorMessage = responseLoginCourier.extract().path("message");
         String expectedErrorMessage = "Учетная запись не найдена";
@@ -111,12 +123,11 @@ public class LoginCourierTests {
     @Test
     @Description("Login courier with wrong password")
     public void loginCourierWrongPassword() {
-        Courier courier = Courier.getLoginPasswordAndFirstName();
+        Courier courier = Courier.getRandom();
         String wrongPassword = "121445324523seg1D*";
         courierHelper.createCourier(courier);
         ValidatableResponse responseLoginCourier =
-                courierHelper.loginCourier(new CourierCredentials()
-                        .setCourierCredentials(courier.getLogin(), wrongPassword));
+                courierHelper.loginCourier(new CourierCredentials(courier.login, wrongPassword));
 
         String actualErrorMessage = responseLoginCourier.extract().path("message");
         String expectedErrorMessage = "Учетная запись не найдена";
@@ -126,8 +137,7 @@ public class LoginCourierTests {
                 actualErrorMessage);
 
         ValidatableResponse responseLoginCourierForID =
-                courierHelper.loginCourier(new CourierCredentials()
-                        .setCourierCredentials(courier.getLogin(), courier.getPassword()));
+                courierHelper.loginCourier(CourierCredentials.getCourierCredentials(courier));
         courierId = responseLoginCourierForID.extract().path("id");
     }
 
@@ -135,6 +145,6 @@ public class LoginCourierTests {
     @Step("Teardown - delete courier")
     public void tearDown() {
         if (courierId != 0)
-            courierHelper.deleteCourierById(courierId);
+            courierHelper.deleteCourier(courierId);
     }
 }

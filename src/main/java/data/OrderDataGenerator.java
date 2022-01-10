@@ -11,46 +11,37 @@ import java.util.Locale;
 public class OrderDataGenerator {
     static Faker faker = new Faker(new Locale("ru_RU"));
 
-    private String firstName;
-    private String lastName;
-    private String address;
-    private int metroStation;
-    private String phone;
-    private int rentTime;
-    private String deliveryDate;
-    private String comment;
-
-    public static String getFirstName() {
+    public static String generateFirstName() {
         return faker.name().firstName();
     }
 
-    public static String getLastName() {
+    public static String generateLastName() {
         return faker.name().lastName();
     }
 
-    public static String getAddress() {
+    public static String generateAddress() {
         return faker.address().streetAddress();
     }
 
-    public static int getMetroStation() {
+    public static int generateMetroStation() {
         return (int) (Math.random() * 3);
     }
 
-    public static String getPhone() {
+    public static String generatePhone() {
         return faker.phoneNumber().phoneNumber();
     }
 
-    public static int getRentTime() {
+    public static int generateRentTime() {
         return (int) (Math.random() * 3);
     }
 
-    public static String getDeliveryDate() {
+    public static String generateDeliveryDate() {
         Date date = new Date();
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         return dateFormat.format(date);
     }
 
-    public static String getComment() {
+    public static String generateComment() {
         return RandomStringUtils.randomAlphabetic(15);
     }
 }

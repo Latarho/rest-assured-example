@@ -8,19 +8,15 @@ import java.util.Locale;
 public class CourierDataGenerator {
     static Faker faker = new Faker(new Locale("ru_RU"));
 
-    private String login;
-    private String password;
-    private String firstName;
-
-    public static String getLogin() {
+    public static String generateLogin() {
         return RandomStringUtils.randomAlphabetic(10);
     }
 
-    public static String getPassword() {
+    public static String generatePassword() {
         return RandomStringUtils.randomAlphabetic(10);
     }
 
-    public static String getFirstName() {
+    public static String generateFirstName() {
         return faker.name().firstName();
     }
 }
